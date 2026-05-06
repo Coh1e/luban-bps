@@ -28,16 +28,71 @@ description = "C++ workshop foundation: llvm-mingw + cmake + ninja + vcpkg (Wind
 # stamps (e.g., 20260421); the resolver picks "latest" via GitHub's
 # /releases/latest endpoint. Asset names contain "x86_64" and the host
 # triplet — the scorer handles canonicalization.
+#
+# Archive's bin/ ships ~270 .exe (clang+lld+llvm-* + mingw aliases +
+# x86_64-w64-mingw32-* + aarch64-w64-mingw32-* cross variants). Until
+# luban grows a `shim_dir` field for "shim everything in this dir",
+# enumerate the toolchain entry points cmake/ninja/IDEs actually probe.
 source = "github:mstorsjo/llvm-mingw"
+bin = "bin/clang.exe"
+shims = [
+    # Native Clang / LLD chain — what cmake's compiler ID + link probe hit
+    "bin/clang.exe",
+    "bin/clang++.exe",
+    "bin/clang-cl.exe",
+    "bin/clang-cpp.exe",
+    "bin/clang-scan-deps.exe",
+    "bin/lld.exe",
+    "bin/ld.lld.exe",
+    "bin/lld-link.exe",
+    "bin/wasm-ld.exe",
+    # GCC-compat aliases — cmake / autoconf / IDE probes use these names
+    "bin/gcc.exe",
+    "bin/g++.exe",
+    "bin/c++.exe",
+    "bin/cpp.exe",
+    "bin/ld.exe",
+    "bin/ar.exe",
+    "bin/as.exe",
+    "bin/nm.exe",
+    "bin/strip.exe",
+    "bin/ranlib.exe",
+    "bin/objcopy.exe",
+    "bin/objdump.exe",
+    "bin/dlltool.exe",
+    "bin/windres.exe",
+    "bin/addr2line.exe",
+    "bin/readelf.exe",
+    "bin/size.exe",
+    "bin/strings.exe",
+    # LLVM utilities (modern toolchains prefer these over GNU binutils)
+    "bin/llvm-ar.exe",
+    "bin/llvm-nm.exe",
+    "bin/llvm-strip.exe",
+    "bin/llvm-objcopy.exe",
+    "bin/llvm-objdump.exe",
+    "bin/llvm-ranlib.exe",
+    "bin/llvm-readobj.exe",
+    "bin/llvm-rc.exe",
+    "bin/llvm-mt.exe",
+    "bin/llvm-windres.exe",
+    "bin/llvm-dlltool.exe",
+]
 
 [tools.cmake]
 # Kitware's official cmake distribution. Releases tagged vX.Y.Z; assets
-# include cmake-X.Y.Z-windows-x86_64.zip which scores cleanly.
+# include cmake-X.Y.Z-windows-x86_64.zip which scores cleanly. The zip's
+# leading dir is flattened by archive::extract; binaries land at <store>/
+# bin/cmake.exe (NOT <store>/cmake.exe).
 source = "github:Kitware/CMake"
+bin = "bin/cmake.exe"
+shims = ["bin/cmake.exe", "bin/cpack.exe", "bin/ctest.exe"]
 
 [tools.ninja]
 # ninja-build official binaries. Asset name is ninja-win.zip on Windows;
-# the scorer matches on "win" plus arch heuristics.
+# the scorer matches on "win" plus arch heuristics. ninja.exe ships at
+# the archive root (no nested bin/) so default_bin_name + default shim
+# path "ninja.exe" both work without an override.
 source = "github:ninja-build/ninja"
 
 [tools.vcpkg]
