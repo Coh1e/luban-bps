@@ -9,10 +9,16 @@ description = "C++ workshop foundation: llvm-mingw + cmake + ninja + vcpkg (Wind
 #   ninja       - Fast parallel build executor
 #   vcpkg       - C++ package manager (manifest mode, post_install bootstrap)
 #
-# git lives in embedded:git-base (universal infrastructure shared with
+# git lives in main/git-base (universal infrastructure shared with
 # clink users, dotfiles users, doc-only repos). vcpkg's bootstrap and
 # port fetches need git on PATH, so cpp-base declares the dependency
 # via meta.requires below.
+#
+# NOTE: meta.requires is currently parsed-but-not-enforced in luban
+# (declaration-only, gating ships in a future release). Until then, run
+# `luban bp apply main/git-base` *before* `luban bp apply main/cpp-base`
+# on a fresh machine — vcpkg's bootstrap-vcpkg.bat will otherwise fail
+# trying to call git.
 #
 # emscripten (for the wasm variant) lives in cpp-base-wasm.toml — emsdk
 # is distributed via its own installer rather than GitHub releases.
@@ -78,5 +84,5 @@ post_install = "bootstrap-vcpkg.bat"
 # ordering intent explicit (enforcement when meta.requires gating lands).
 
 [meta]
-requires = ["embedded:git-base"]
+requires = ["main/git-base"]
 conflicts = []
