@@ -35,37 +35,39 @@ description = "C++ workshop foundation: llvm-mingw + cmake + ninja + vcpkg (Wind
 # enumerate the toolchain entry points cmake/ninja/IDEs actually probe.
 source = "github:mstorsjo/llvm-mingw"
 bin = "bin/clang.exe"
+# Verified against llvm-mingw 20260505 ucrt-x86_64. Entries that
+# llvm-mingw doesn't ship (clang-cl, lld, lld-link, wasm-ld, cpp,
+# ld, as, objdump, llvm-mt) intentionally omitted — luban's apply
+# errors hard if a listed shim target is missing, so the list has
+# to track upstream. Cross-triplet variants (aarch64-w64-mingw32-* /
+# x86_64-w64-mingw32-*) deferred to opt-in cross-compile bp later.
 shims = [
-    # Native Clang / LLD chain — what cmake's compiler ID + link probe hit
+    # Native Clang chain
     "bin/clang.exe",
     "bin/clang++.exe",
-    "bin/clang-cl.exe",
-    "bin/clang-cpp.exe",
     "bin/clang-scan-deps.exe",
-    "bin/lld.exe",
+    "bin/clang-format.exe",
+    "bin/clang-tidy.exe",
+    "bin/clangd.exe",
     "bin/ld.lld.exe",
-    "bin/lld-link.exe",
-    "bin/wasm-ld.exe",
-    # GCC-compat aliases — cmake / autoconf / IDE probes use these names
+    # GCC-compat aliases — cmake / autoconf / IDE compiler probes
     "bin/gcc.exe",
     "bin/g++.exe",
     "bin/c++.exe",
-    "bin/cpp.exe",
-    "bin/ld.exe",
+    "bin/cc.exe",
+    # Binutils-compat (GNU names; LLVM impls under the hood)
     "bin/ar.exe",
-    "bin/as.exe",
     "bin/nm.exe",
     "bin/strip.exe",
     "bin/ranlib.exe",
     "bin/objcopy.exe",
-    "bin/objdump.exe",
     "bin/dlltool.exe",
     "bin/windres.exe",
     "bin/addr2line.exe",
     "bin/readelf.exe",
     "bin/size.exe",
     "bin/strings.exe",
-    # LLVM utilities (modern toolchains prefer these over GNU binutils)
+    # LLVM utilities — modern callers prefer these
     "bin/llvm-ar.exe",
     "bin/llvm-nm.exe",
     "bin/llvm-strip.exe",
@@ -73,10 +75,25 @@ shims = [
     "bin/llvm-objdump.exe",
     "bin/llvm-ranlib.exe",
     "bin/llvm-readobj.exe",
+    "bin/llvm-readelf.exe",
     "bin/llvm-rc.exe",
-    "bin/llvm-mt.exe",
     "bin/llvm-windres.exe",
     "bin/llvm-dlltool.exe",
+    "bin/llvm-cov.exe",
+    "bin/llvm-cvtres.exe",
+    "bin/llvm-cxxfilt.exe",
+    "bin/llvm-lib.exe",
+    "bin/llvm-ml.exe",
+    "bin/llvm-pdbutil.exe",
+    "bin/llvm-profdata.exe",
+    "bin/llvm-symbolizer.exe",
+    # Debugger
+    "bin/lldb.exe",
+    "bin/lldb-server.exe",
+    "bin/lldb-dap.exe",
+    # Windows-specific
+    "bin/gendef.exe",
+    "bin/widl.exe",
 ]
 
 [tools.cmake]
