@@ -11,9 +11,9 @@ return {
   configs = {},
   meta = {
     requires = {
-      "embedded:git-base",
-      "embedded:cpp-base",
-      "embedded:cli-quality",
+      "main/git-base",
+      "main/cpp-base",
+      "main/cli-quality",
     },
     conflicts = {},
   },
