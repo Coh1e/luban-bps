@@ -14,17 +14,22 @@ Personal [luban](../luban/) blueprint source.
 
 ## Use
 
-Local-path mode (no GitHub push needed):
-
 ```pwsh
-luban bp source add personal "file:///D:/Projects/luban-bps"
-luban bp apply personal/onboarding
+# github shorthand (most common):
+luban bp src add Coh1e/luban-bps
+luban bp apply onboarding
+
+# or local path during dev:
+luban bp src add D:\Projects\luban-bps
+luban bp apply onboarding
+
+# update later:
+luban bp src update luban-bps
+
+# rename if the auto-derived name collides:
+luban bp src add Coh1e/luban-bps --name dotfiles
 ```
 
-Remote mode (after `git push` to a GitHub repo):
-
-```pwsh
-luban bp source add personal https://github.com/Coh1e/luban-bps
-luban bp source update personal
-luban bp apply personal/onboarding
-```
+Source name auto-derives from the URL — repo basename for github,
+directory basename for local. `--name <override>` picks a custom
+local nickname.
