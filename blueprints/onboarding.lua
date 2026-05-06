@@ -11,9 +11,9 @@ return {
   configs = {},
   meta = {
     requires = {
-      "main/git-base",
-      "main/cpp-base",
-      "main/cli-base",
+      "main/foundation",
+      "main/cpp-toolchain",
+      "main/cli-tools",
     },
     conflicts = {},
   },

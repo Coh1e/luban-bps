@@ -1,6 +1,6 @@
 schema = 1
-name = "cpp-base"
-description = "C++ workshop foundation: llvm-mingw + cmake + ninja + vcpkg (Windows host, x64)"
+name = "cpp-toolchain"
+description = "C++ 承重墙 layer: llvm-mingw + cmake + ninja + vcpkg (Windows host, x64)"
 
 # This blueprint bootstraps the C++ 承重墙 layer (DESIGN §1):
 #
@@ -9,19 +9,23 @@ description = "C++ workshop foundation: llvm-mingw + cmake + ninja + vcpkg (Wind
 #   ninja       - Fast parallel build executor
 #   vcpkg       - C++ package manager (manifest mode, post_install bootstrap)
 #
-# git lives in main/git-base (universal infrastructure shared with
+# git lives in main/foundation (universal infrastructure shared with
 # clink users, dotfiles users, doc-only repos). vcpkg's bootstrap and
-# port fetches need git on PATH, so cpp-base declares the dependency
-# via meta.requires below.
+# port fetches need git on PATH, so cpp-toolchain declares the
+# dependency via meta.requires below. install.ps1 pre-applies
+# main/foundation before main/cpp-toolchain by default, so a fresh box
+# satisfies the dep without manual sequencing.
 #
 # NOTE: meta.requires is currently parsed-but-not-enforced in luban
-# (declaration-only, gating ships in a future release). Until then, run
-# `luban bp apply main/git-base` *before* `luban bp apply main/cpp-base`
-# on a fresh machine — vcpkg's bootstrap-vcpkg.bat will otherwise fail
+# (declaration-only, gating ships in a future release). install.ps1
+# already sequences correctly; if you skip it and apply manually, run
+# `luban bp apply main/foundation` *before* `luban bp apply main/cpp-toolchain`
+# on a fresh machine — otherwise vcpkg's bootstrap-vcpkg.bat fails
 # trying to call git.
 #
-# emscripten (for the wasm variant) lives in cpp-base-wasm.toml — emsdk
-# is distributed via its own installer rather than GitHub releases.
+# emscripten (for the wasm variant) lives in cpp-toolchain-wasm.toml
+# (TBD) — emsdk is distributed via its own installer rather than
+# GitHub releases.
 
 # ----- Tools -------------------------------------------------------------
 # Each `source = "github:owner/repo"` line tells luban's GitHub resolver
@@ -79,10 +83,11 @@ post_install = "bootstrap-vcpkg.bat"
 
 # ----- Meta --------------------------------------------------------------
 # vcpkg bootstrap + manifest-mode port fetches both shell out to git;
-# without git on PATH cpp-base apply will get past the lock + extract
-# steps but fail at vcpkg post_install. Declared dependency makes the
-# ordering intent explicit (enforcement when meta.requires gating lands).
+# without git on PATH cpp-toolchain apply will get past the lock +
+# extract steps but fail at vcpkg post_install. Declared dependency
+# makes the ordering intent explicit (enforcement when meta.requires
+# gating lands).
 
 [meta]
-requires = ["main/git-base"]
+requires = ["main/foundation"]
 conflicts = []

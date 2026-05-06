@@ -1,14 +1,17 @@
 schema = 1
-name = "git-base"
-description = "git universal layer: mingit + lfs + gcm + openssh, with LFS filters and GCM helper auto-wired"
+name = "foundation"
+description = "universal foundation: mingit + lfs + gcm + openssh, with LFS filters and GCM helper auto-wired"
 
-# Why git is its own layer (not part of cpp-base):
+# Why git lives in this `foundation` layer (not bundled into cpp-toolchain):
 #
 # git is universal infrastructure — clink users, dotfiles users, doc-only
-# repos, scripting workflows all need it. Pinning it to cpp-base would
+# repos, scripting workflows all need it. Pinning it to cpp-toolchain would
 # force everyone who wants git to also drag in clang/cmake/ninja/vcpkg.
-# Splitting it out lets cpp-base / cli-base / future layers all
-# `meta.requires = ["main/git-base"]` and share one git install.
+# Splitting it out lets cpp-toolchain / cli-tools / future layers all
+# `meta.requires = ["main/foundation"]` and share one git install.
+# install.ps1 pre-applies main/foundation by default — every fresh luban
+# gets git+ssh+gcm without prompting (it's a true prereq for almost
+# every other bp).
 #
 # Selection criterion (user pinned): the chosen distribution MUST cover
 # git LFS and Git Credential Manager. Two ways to satisfy that:
@@ -24,7 +27,7 @@ description = "git universal layer: mingit + lfs + gcm + openssh, with LFS filte
 #
 # Activation of LFS filters and GCM helper happens declaratively via
 # the [programs.git] block at the bottom — luban renders to
-# ~/.gitconfig.d/git-base.gitconfig (drop-in mode), user `[include]`s
+# ~/.gitconfig.d/foundation.gitconfig (drop-in mode), user `[include]`s
 # the file (or the whole subdir) from their main ~/.gitconfig once.
 
 # ----- Tools -------------------------------------------------------------
@@ -84,7 +87,7 @@ source = "github:git-ecosystem/git-credential-manager"
 # `sshd.exe` (server) is intentionally excluded — running an SSH daemon
 # isn't part of "git universal layer" and adding it pollutes PATH.
 #
-# Why openssh lives in git-base (not its own layer or cpp-base):
+# Why openssh lives in foundation (not its own layer or cpp-toolchain):
 # its primary use cases here — git push over SSH and SSH commit signing
 # (gpg.format = ssh) — are git-driven. SSH-into-servers / scp-deploy
 # users still benefit, but the motivation is git.
