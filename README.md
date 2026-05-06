@@ -10,8 +10,9 @@ and personal additions:
 |---|---|
 | `foundation` | git + lfs + gcm + openssh — install.ps1 always pre-applies |
 | `cpp-toolchain` | llvm-mingw + cmake + ninja + vcpkg (depends on foundation) |
-| `cli-tools` | zoxide / starship / fd / ripgrep |
+| `cli-tools` | zoxide / starship / fd / ripgrep + ripgreprc + fd ignore + profile.ps1 init |
 | `fonts` | Maple Mono (NF CN) — registers under HKCU\Fonts, no UAC |
+| `pwsh-modules` | PowerShell modules from PSGallery (PSReadLine + commented examples) — needs luban v0.4.1+ |
 | `onboarding` | personal Win11 setup |
 
 ## Layout
