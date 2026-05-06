@@ -13,7 +13,7 @@ return {
     requires = {
       "main/git-base",
       "main/cpp-base",
-      "main/cli-quality",
+      "main/cli-base",
     },
     conflicts = {},
   },

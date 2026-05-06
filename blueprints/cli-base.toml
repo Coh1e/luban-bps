@@ -1,0 +1,21 @@
+schema = 1
+name = "cli-base"
+description = "minimal CLI quality of life: zoxide / starship / fd / ripgrep"
+
+# ----- Tools -------------------------------------------------------------
+
+[tools.zoxide]
+source = "github:ajeetdsouza/zoxide"
+
+[tools.starship]
+source = "github:starship/starship"
+
+[tools.fd]
+source = "github:sharkdp/fd"
+
+[tools.ripgrep]
+source = "github:BurntSushi/ripgrep"
+
+[meta]
+requires = []
+conflicts = []

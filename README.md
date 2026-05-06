@@ -10,7 +10,7 @@ and personal additions:
 |---|---|
 | `git-base` | git + lfs + gcm + openssh |
 | `cpp-base` | llvm-mingw + cmake + ninja + vcpkg (depends on git-base) |
-| `cli-quality` | ripgrep / fd / bat / fzf / delta / gh / jq / eza / zoxide |
+| `cli-base` | zoxide / starship / fd / ripgrep |
 | `onboarding` | personal Win11 setup |
 
 ## Layout

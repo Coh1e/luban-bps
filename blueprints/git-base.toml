@@ -7,7 +7,7 @@ description = "git universal layer: mingit + lfs + gcm + openssh, with LFS filte
 # git is universal infrastructure — clink users, dotfiles users, doc-only
 # repos, scripting workflows all need it. Pinning it to cpp-base would
 # force everyone who wants git to also drag in clang/cmake/ninja/vcpkg.
-# Splitting it out lets cpp-base / cli-quality / future layers all
+# Splitting it out lets cpp-base / cli-base / future layers all
 # `meta.requires = ["embedded:git-base"]` and share one git install.
 #
 # Selection criterion (user pinned): the chosen distribution MUST cover
