@@ -1,6 +1,17 @@
 # luban-bps
 
-Personal [luban](../luban/) blueprint source.
+[luban](../luban/) blueprint source.
+
+Holds both the **foundation 3** (the universal C++ Windows toolchain layer
+previously embedded in the luban binary, retired per DESIGN §9.10 议题 AG)
+and personal additions:
+
+| bp | what it installs |
+|---|---|
+| `git-base` | git + lfs + gcm + openssh |
+| `cpp-base` | llvm-mingw + cmake + ninja + vcpkg (depends on git-base) |
+| `cli-quality` | ripgrep / fd / bat / fzf / delta / gh / jq / eza / zoxide |
+| `onboarding` | personal Win11 setup |
 
 ## Layout
 

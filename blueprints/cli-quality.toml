@@ -1,0 +1,73 @@
+schema = 1
+name = "cli-quality"
+description = "personal CLI quality of life: ripgrep / fd / bat / fzf / delta / gh / jq / eza / zoxide"
+
+# ----- Tools -------------------------------------------------------------
+
+[tools.ripgrep]
+source = "github:BurntSushi/ripgrep"
+
+[tools.fd]
+source = "github:sharkdp/fd"
+
+[tools.bat]
+source = "github:sharkdp/bat"
+
+[tools.fzf]
+source = "github:junegunn/fzf"
+
+[tools.delta]
+source = "github:dandavison/delta"
+
+[tools.gh]
+source = "github:cli/cli"
+
+[tools.jq]
+source = "github:jqlang/jq"
+
+[tools.eza]
+source = "github:eza-community/eza"
+
+[tools.zoxide]
+source = "github:ajeetdsouza/zoxide"
+
+# ----- Programs (renderable today) ---------------------------------------
+# These produce real config output via the renderers in templates/programs/.
+# Users can opt out of any block by deleting it from a copied-out version.
+
+[programs.bat]
+theme = "ansi"
+style = ["numbers", "changes", "header"]
+paging = "never"
+
+[programs.git]
+# Opinionated defaults; users will probably override userName/userEmail
+# in their own copy of the blueprint.
+[programs.git.aliases]
+co = "checkout"
+br = "branch"
+st = "status"
+ll = "log --oneline --graph --decorate -20"
+[programs.git.core]
+editor = "vim"
+[programs.git.init]
+defaultBranch = "main"
+[programs.git.pull]
+rebase = "true"
+
+[programs.delta]
+navigate = true
+line-numbers = true
+side-by-side = true
+syntax-theme = "Monokai Extended"
+
+[programs.yazi]
+[programs.yazi.manager]
+ratio = [1, 4, 3]
+sort_by = "alphabetical"
+sort_dir_first = true
+linemode = "size"
+
+[meta]
+requires = []
+conflicts = []

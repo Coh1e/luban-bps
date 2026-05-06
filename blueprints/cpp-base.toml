@@ -1,0 +1,67 @@
+schema = 1
+name = "cpp-base"
+description = "C++ workshop foundation: llvm-mingw + cmake + ninja + vcpkg (Windows host, x64)"
+
+# This blueprint bootstraps the C++ 承重墙 layer (DESIGN §1):
+#
+#   llvm-mingw  - Clang + LLD + MinGW-w64 runtime (the C++ compiler stack)
+#   cmake       - Build system generator
+#   ninja       - Fast parallel build executor
+#   vcpkg       - C++ package manager (manifest mode, post_install bootstrap)
+#
+# git lives in embedded:git-base (universal infrastructure shared with
+# clink users, dotfiles users, doc-only repos). vcpkg's bootstrap and
+# port fetches need git on PATH, so cpp-base declares the dependency
+# via meta.requires below.
+#
+# emscripten (for the wasm variant) lives in cpp-base-wasm.toml — emsdk
+# is distributed via its own installer rather than GitHub releases.
+
+# ----- Tools -------------------------------------------------------------
+# Each `source = "github:owner/repo"` line tells luban's GitHub resolver
+# to pick the latest release, score assets by host triplet, download the
+# best match, and pin its sha256 into the blueprint lock. First apply on
+# a fresh host fetches; subsequent applies are offline.
+
+[tools.llvm-mingw]
+# mstorsjo's portable Clang+LLD+MinGW-w64 toolchain. Releases use date
+# stamps (e.g., 20260421); the resolver picks "latest" via GitHub's
+# /releases/latest endpoint. Asset names contain "x86_64" and the host
+# triplet — the scorer handles canonicalization.
+source = "github:mstorsjo/llvm-mingw"
+
+[tools.cmake]
+# Kitware's official cmake distribution. Releases tagged vX.Y.Z; assets
+# include cmake-X.Y.Z-windows-x86_64.zip which scores cleanly.
+source = "github:Kitware/CMake"
+
+[tools.ninja]
+# ninja-build official binaries. Asset name is ninja-win.zip on Windows;
+# the scorer matches on "win" plus arch heuristics.
+source = "github:ninja-build/ninja"
+
+[tools.vcpkg]
+# microsoft/vcpkg has zero release attachments — distribution is via
+# git clone or the auto-generated source-zip. The GitHub resolver's
+# source-zip fallback handles the latter (downloads release.zipball_url
+# and computes sha256). archive::extract flattens the leading
+# `vcpkg-<tag>/` dir, so the bootstrap script lands at the artifact
+# root.
+#
+# `post_install` runs bootstrap-vcpkg.bat which builds vcpkg.exe in
+# place. `bin` then points the shim at the just-built binary. Skipping
+# the bootstrap on cache hits is automatic: post_install only runs on
+# fresh extraction (DESIGN §9.9).
+source = "github:microsoft/vcpkg"
+bin = "vcpkg.exe"
+post_install = "bootstrap-vcpkg.bat"
+
+# ----- Meta --------------------------------------------------------------
+# vcpkg bootstrap + manifest-mode port fetches both shell out to git;
+# without git on PATH cpp-base apply will get past the lock + extract
+# steps but fail at vcpkg post_install. Declared dependency makes the
+# ordering intent explicit (enforcement when meta.requires gating lands).
+
+[meta]
+requires = ["embedded:git-base"]
+conflicts = []
