@@ -4,16 +4,16 @@ description = "minimal CLI quality of life: zoxide / starship / fd / ripgrep"
 
 # ----- Tools -------------------------------------------------------------
 
-[tools.zoxide]
+[tool.zoxide]
 source = "github:ajeetdsouza/zoxide"
 
-[tools.starship]
+[tool.starship]
 source = "github:starship/starship"
 
-[tools.fd]
+[tool.fd]
 source = "github:sharkdp/fd"
 
-[tools.ripgrep]
+[tool.ripgrep]
 source = "github:BurntSushi/ripgrep"
 
 [meta]

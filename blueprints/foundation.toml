@@ -26,13 +26,13 @@ description = "universal foundation: mingit + lfs + gcm + openssh, with LFS filt
 # entries from a copied-out blueprint without breaking anything.
 #
 # Activation of LFS filters and GCM helper happens declaratively via
-# the [programs.git] block at the bottom — luban renders to
+# the [config.git] block at the bottom — luban renders to
 # ~/.gitconfig.d/foundation.gitconfig (drop-in mode), user `[include]`s
 # the file (or the whole subdir) from their main ~/.gitconfig once.
 
 # ----- Tools -------------------------------------------------------------
 
-[tools.mingit]
+[tool.mingit]
 # Git for Windows publishes several artifact flavors per release; the
 # "MinGit" portable variant (no installer, single archive) is what we
 # want. Asset name pattern: MinGit-X.Y.Z-64-bit.zip.
@@ -43,31 +43,31 @@ description = "universal foundation: mingit + lfs + gcm + openssh, with LFS filt
 source = "github:git-for-windows/git"
 bin = "cmd/git.exe"
 
-[tools.git-lfs]
+[tool.git-lfs]
 # Asset name pattern: git-lfs-windows-amd64-vX.Y.Z.zip. Archive contains
 # git-lfs.exe at the root after the leading `git-lfs-X.Y.Z/` dir is
 # flattened by archive::extract. Default tool-name → bin derivation
 # (git-lfs → git-lfs.exe) matches, so no `bin` override needed.
 #
 # git auto-discovers `git-lfs` on PATH and dispatches `git lfs ...`. The
-# smudge/clean filter wiring lives in [programs.git] below — that's how
+# smudge/clean filter wiring lives in [config.git] # smudge/clean filter wiring lives in [config.git] below — that's how
 # `git clone` of an LFS repo actually pulls real files instead of
 # pointer stubs.
 source = "github:git-lfs/git-lfs"
 
-[tools.git-credential-manager]
+[tool.git-credential-manager]
 # Asset name pattern: gcm-win-x86_64-X.Y.Z.zip (avoid the .symbols.zip
 # variant — the resolver's scorer prefers shorter matching names so this
 # usually picks correctly). Archive extracts to root containing
 # git-credential-manager.exe plus a self-contained .NET runtime.
 #
 # Tool-name → bin derivation (git-credential-manager → .exe) is exact.
-# Activation is `credential.helper = manager` in [programs.git.credential]
+# Activation is `credential.helper = manager` in [config.git.credential]
 # below; once set, every HTTPS push/pull routes through GCM, which stores
 # creds DPAPI-encrypted in the per-user Windows Credential Manager.
 source = "github:git-ecosystem/git-credential-manager"
 
-[tools.openssh]
+[tool.openssh]
 # PowerShell/Win32-OpenSSH is Microsoft's port — same upstream as the
 # OpenSSH that Windows ships as an Optional Feature, distributed as a
 # portable zip on GitHub releases. Asset pattern: OpenSSH-Win64.zip.
@@ -98,10 +98,10 @@ external_skip = "ssh.exe"
 
 # ----- Programs ---------------------------------------------------------
 
-[programs.git]
+[config.git]
 lfs = true                       # emits [filter "lfs"] block (clean/smudge/process/required)
 
-[programs.git.credential]
+[config.git.credential]
 helper = "manager"               # routes HTTPS auth through GCM
 
 # ----- Meta -------------------------------------------------------------

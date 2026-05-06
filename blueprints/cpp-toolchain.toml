@@ -33,7 +33,7 @@ description = "C++ 承重墙 layer: llvm-mingw + cmake + ninja + vcpkg (Windows 
 # best match, and pin its sha256 into the blueprint lock. First apply on
 # a fresh host fetches; subsequent applies are offline.
 
-[tools.llvm-mingw]
+[tool.llvm-mingw]
 # mstorsjo's portable Clang+LLD+MinGW-w64 toolchain. Releases use date
 # stamps; the resolver picks "latest" via GitHub's /releases/latest
 # endpoint. Asset names contain "x86_64" and the host triplet — the
@@ -48,7 +48,7 @@ source = "github:mstorsjo/llvm-mingw"
 bin = "bin/clang.exe"
 shim_dir = "bin"
 
-[tools.cmake]
+[tool.cmake]
 # Kitware's official cmake distribution. Releases tagged vX.Y.Z; assets
 # include cmake-X.Y.Z-windows-x86_64.zip which scores cleanly. The zip's
 # leading dir is flattened by archive::extract; binaries land at <store>/
@@ -58,14 +58,14 @@ source = "github:Kitware/CMake"
 bin = "bin/cmake.exe"
 shim_dir = "bin"
 
-[tools.ninja]
+[tool.ninja]
 # ninja-build official binaries. Asset name is ninja-win.zip on Windows;
 # the scorer matches on "win" plus arch heuristics. ninja.exe ships at
 # the archive root (no nested bin/) so default_bin_name + default shim
 # path "ninja.exe" both work without an override.
 source = "github:ninja-build/ninja"
 
-[tools.vcpkg]
+[tool.vcpkg]
 # microsoft/vcpkg has zero release attachments — distribution is via
 # git clone or the auto-generated source-zip. The GitHub resolver's
 # source-zip fallback handles the latter (downloads release.zipball_url

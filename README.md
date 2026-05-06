@@ -8,9 +8,9 @@ and personal additions:
 
 | bp | what it installs |
 |---|---|
-| `git-base` | git + lfs + gcm + openssh |
-| `cpp-base` | llvm-mingw + cmake + ninja + vcpkg (depends on git-base) |
-| `cli-base` | zoxide / starship / fd / ripgrep |
+| `foundation` | git + lfs + gcm + openssh — install.ps1 always pre-applies |
+| `cpp-toolchain` | llvm-mingw + cmake + ninja + vcpkg (depends on foundation) |
+| `cli-tools` | zoxide / starship / fd / ripgrep |
 | `onboarding` | personal Win11 setup |
 
 ## Layout
