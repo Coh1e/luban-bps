@@ -25,85 +25,28 @@ description = "C++ workshop foundation: llvm-mingw + cmake + ninja + vcpkg (Wind
 
 [tools.llvm-mingw]
 # mstorsjo's portable Clang+LLD+MinGW-w64 toolchain. Releases use date
-# stamps (e.g., 20260421); the resolver picks "latest" via GitHub's
-# /releases/latest endpoint. Asset names contain "x86_64" and the host
-# triplet — the scorer handles canonicalization.
+# stamps; the resolver picks "latest" via GitHub's /releases/latest
+# endpoint. Asset names contain "x86_64" and the host triplet — the
+# scorer handles canonicalization.
 #
-# Archive's bin/ ships ~270 .exe (clang+lld+llvm-* + mingw aliases +
-# x86_64-w64-mingw32-* + aarch64-w64-mingw32-* cross variants). Until
-# luban grows a `shim_dir` field for "shim everything in this dir",
-# enumerate the toolchain entry points cmake/ninja/IDEs actually probe.
+# `shim_dir = "bin"` makes luban shim every .exe in the archive's
+# bin/ — ~270 binaries covering clang+lld+llvm-utilities + GNU-compat
+# aliases + cross-triplet variants. Requires luban v0.1.6+. The
+# alternative was a 38-entry hand-curated list that drifted whenever
+# upstream added or removed a tool.
 source = "github:mstorsjo/llvm-mingw"
 bin = "bin/clang.exe"
-# Verified against llvm-mingw 20260505 ucrt-x86_64. Entries that
-# llvm-mingw doesn't ship (clang-cl, lld, lld-link, wasm-ld, cpp,
-# ld, as, objdump, llvm-mt) intentionally omitted — luban's apply
-# errors hard if a listed shim target is missing, so the list has
-# to track upstream. Cross-triplet variants (aarch64-w64-mingw32-* /
-# x86_64-w64-mingw32-*) deferred to opt-in cross-compile bp later.
-shims = [
-    # Native Clang chain
-    "bin/clang.exe",
-    "bin/clang++.exe",
-    "bin/clang-scan-deps.exe",
-    "bin/clang-format.exe",
-    "bin/clang-tidy.exe",
-    "bin/clangd.exe",
-    "bin/ld.lld.exe",
-    # GCC-compat aliases — cmake / autoconf / IDE compiler probes
-    "bin/gcc.exe",
-    "bin/g++.exe",
-    "bin/c++.exe",
-    "bin/cc.exe",
-    # Binutils-compat (GNU names; LLVM impls under the hood)
-    "bin/ar.exe",
-    "bin/nm.exe",
-    "bin/strip.exe",
-    "bin/ranlib.exe",
-    "bin/objcopy.exe",
-    "bin/dlltool.exe",
-    "bin/windres.exe",
-    "bin/addr2line.exe",
-    "bin/readelf.exe",
-    "bin/size.exe",
-    "bin/strings.exe",
-    # LLVM utilities — modern callers prefer these
-    "bin/llvm-ar.exe",
-    "bin/llvm-nm.exe",
-    "bin/llvm-strip.exe",
-    "bin/llvm-objcopy.exe",
-    "bin/llvm-objdump.exe",
-    "bin/llvm-ranlib.exe",
-    "bin/llvm-readobj.exe",
-    "bin/llvm-readelf.exe",
-    "bin/llvm-rc.exe",
-    "bin/llvm-windres.exe",
-    "bin/llvm-dlltool.exe",
-    "bin/llvm-cov.exe",
-    "bin/llvm-cvtres.exe",
-    "bin/llvm-cxxfilt.exe",
-    "bin/llvm-lib.exe",
-    "bin/llvm-ml.exe",
-    "bin/llvm-pdbutil.exe",
-    "bin/llvm-profdata.exe",
-    "bin/llvm-symbolizer.exe",
-    # Debugger
-    "bin/lldb.exe",
-    "bin/lldb-server.exe",
-    "bin/lldb-dap.exe",
-    # Windows-specific
-    "bin/gendef.exe",
-    "bin/widl.exe",
-]
+shim_dir = "bin"
 
 [tools.cmake]
 # Kitware's official cmake distribution. Releases tagged vX.Y.Z; assets
 # include cmake-X.Y.Z-windows-x86_64.zip which scores cleanly. The zip's
 # leading dir is flattened by archive::extract; binaries land at <store>/
-# bin/cmake.exe (NOT <store>/cmake.exe).
+# bin/cmake.exe (NOT <store>/cmake.exe). Requires luban v0.1.6+ for
+# shim_dir support.
 source = "github:Kitware/CMake"
 bin = "bin/cmake.exe"
-shims = ["bin/cmake.exe", "bin/cpack.exe", "bin/ctest.exe"]
+shim_dir = "bin"
 
 [tools.ninja]
 # ninja-build official binaries. Asset name is ninja-win.zip on Windows;
