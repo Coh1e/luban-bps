@@ -13,7 +13,7 @@ Two blueprints, applied in order:
 | bp | what it installs | size |
 |---|---|---|
 | `bootstrap` | mingit + git-lfs + gcm + llvm-mingw + cmake + ninja + vcpkg | ~700 MB extracted |
-| `onboarding` | pwsh 7 + Maple Mono NF CN + starship + zoxide + fd + ripgrep + dotfiles + Windows Terminal theme | ~150 MB extracted |
+| `onboarding` | pwsh 7 + Maple Mono NF CN + starship + zoxide + fd + ripgrep + dotfiles (+ WT pwsh profile entry, only if WT installed) | ~150 MB extracted |
 
 `onboarding` depends on `bootstrap` (`requires = { "main/bootstrap" }`).
 Applying `onboarding` triggers `bootstrap` first if it isn't applied yet.
@@ -32,10 +32,12 @@ the typical workflow.
 portable (PSReadLine bundled), Maple Mono NF CN registered per-user
 under `HKCU\...\Fonts`, the workbench CLIs (starship/zoxide/fd/rg), and
 the dotfiles that wire them together: a pwsh profile, starship theme,
-ripgrep config, fd ignore patterns, and a Windows Terminal
-`settings.json` patch (RFC 7396 merge — note arrays REPLACE, so a
-hand-curated `schemes` list will be clobbered). Replaces the v1.0 split
-of `cli-tools` + `fonts` + `onboarding`.
+ripgrep config, fd ignore patterns. If Windows Terminal is already
+installed, the pwsh tool's `post_install` also appends a "PowerShell
+(luban)" profile to `settings.json` so users can pick the bp-installed
+pwsh from the dropdown. WT defaults — font, theme, color scheme — are
+NOT touched; if WT isn't installed, the WT step is skipped silently.
+Replaces the v1.0 split of `cli-tools` + `fonts` + `onboarding`.
 
 ## Layout
 
@@ -46,7 +48,9 @@ of `cli-tools` + `fonts` + `onboarding`.
 │   ├── bootstrap.lua
 │   └── onboarding.lua
 └── scripts/
-    └── register-fonts.ps1 post_install for the maple-mono tool
+    ├── register-fonts.ps1       post_install for the maple-mono tool
+    └── register-wt-profile.ps1  post_install for the pwsh tool — adds a
+                                 WT profile entry; skips when WT absent
 ```
 
 ## Use

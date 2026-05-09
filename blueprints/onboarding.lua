@@ -22,32 +22,29 @@
 --   ~/.config/starship.toml          starship prompt theme.
 --   ~/.config/ripgrep/ripgreprc      sane ripgrep defaults.
 --   ~/.config/fd/ignore              sane fd ignore patterns.
---   <localappdata>/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/
---     LocalState/settings.json       Windows Terminal config — sets
---                                    Maple Mono as the default font and
---                                    Ayu Mirage as the default theme.
---                                    mode = merge (RFC 7396 JSON merge
---                                    patch). NOTE: arrays REPLACE under
---                                    7396, so any user-customized schemes
---                                    will be clobbered. If you have
---                                    hand-curated WT schemes, fork this
---                                    bp before applying.
+--
+-- Windows Terminal:
+--   The pwsh tool's post_install runs scripts/register-wt-profile.ps1,
+--   which appends a "PowerShell (luban)" profile entry to WT's
+--   settings.json so users can pick the bp-installed pwsh from the
+--   dropdown. The script SKIPS silently when WT isn't installed
+--   (settings.json absent). WT defaults — font, theme, color scheme —
+--   are NOT touched; users keep WT's out-of-box look.
+--
+--   Caveat: post_install runs only on fresh extraction. If you install
+--   WT after applying this bp, the profile entry won't appear until
+--   the next pwsh upgrade re-extracts. Force a re-run with
+--   `luban bp apply main/onboarding --update` after a pwsh release
+--   bump, or run scripts/register-wt-profile.ps1 manually.
 --
 -- PSReadLine is NOT installed as a separate tool — pwsh 7 ships with
 -- it bundled at $PSHome/Modules/PSReadLine. The profile just configures
 -- it (Set-PSReadLineOption / -KeyHandler).
 
--- Build the WT settings.json target path at parse time. WT lives in a
--- versioned Packages\ subdir we can't predict from a static string;
--- LOCALAPPDATA gives us the prefix.
-local localappdata = os.getenv("LOCALAPPDATA") or ""
-local wt_settings = localappdata ..
-    "\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json"
-
 return {
   schema = 1,
   name = "onboarding",
-  description = "Personal Win11 shell: pwsh + Maple Mono + starship/zoxide/fd/rg + Windows Terminal theme",
+  description = "Personal Win11 shell: pwsh + Maple Mono + starship/zoxide/fd/rg (+ WT pwsh profile if WT installed)",
 
   tools = {
     -- PowerShell 7 portable. github.com/PowerShell/PowerShell ships
@@ -59,6 +56,13 @@ return {
     pwsh = {
       source = "github:PowerShell/PowerShell",
       bin = "pwsh.exe",
+      -- After extraction, register a "PowerShell (luban)" profile in
+      -- Windows Terminal so users can pick the bp-installed pwsh from
+      -- the dropdown. The script no-ops when WT isn't installed; WT's
+      -- default font / theme / colorScheme are left untouched.
+      -- `bp:` prefix resolves the path against the bp source root,
+      -- not the extracted artifact (DESIGN §9.9 post_install).
+      post_install = "bp:scripts/register-wt-profile.ps1",
     },
 
     starship = { source = "github:starship/starship" },
@@ -328,58 +332,10 @@ if (Has-Cmd starship) {
 ]==],
     },
 
-    -- Windows Terminal: defaultProfile picks Maple Mono + Ayu Mirage.
-    -- mode = merge: RFC 7396 JSON merge patch deep-merges objects key-
-    -- by-key but ARRAYS REPLACE WHOLESALE. So `schemes` here will
-    -- replace any user-curated scheme list. profiles.defaults likewise
-    -- merges deeply for objects but the `font` block is fully written.
-    --
-    -- WT reads this file live; new tabs reflect the change immediately.
-    -- If WT isn't installed yet, file_deploy creates the path; WT will
-    -- pick up our settings once the user installs it.
-    [wt_settings] = {
-      mode = "merge",
-      content = [==[
-{
-  "profiles": {
-    "defaults": {
-      "colorScheme": "Ayu Mirage",
-      "font": {
-        "face": "Maple Mono NF CN",
-        "size": 11
-      },
-      "useAcrylic": false,
-      "padding": "8"
-    }
-  },
-  "schemes": [
-    {
-      "name": "Ayu Mirage",
-      "background": "#1F2430",
-      "foreground": "#CBCCC6",
-      "cursorColor": "#FFCC66",
-      "selectionBackground": "#34455A",
-      "black": "#1F2430",
-      "red": "#FF3333",
-      "green": "#BAE67E",
-      "yellow": "#FFA759",
-      "blue": "#73D0FF",
-      "purple": "#FFA759",
-      "cyan": "#95E6CB",
-      "white": "#C7C7C7",
-      "brightBlack": "#686868",
-      "brightRed": "#F27983",
-      "brightGreen": "#A6CC70",
-      "brightYellow": "#FFCC66",
-      "brightBlue": "#5CCFE6",
-      "brightPurple": "#D4BFFF",
-      "brightCyan": "#95E6CB",
-      "brightWhite": "#FFFFFF"
-    }
-  ]
-}
-]==],
-    },
+    -- Windows Terminal: handled by the pwsh tool's post_install
+    -- (scripts/register-wt-profile.ps1) — appends a "PowerShell (luban)"
+    -- profile to WT settings.json only when WT is installed. WT defaults
+    -- (font / theme / schemes) are intentionally not touched.
   },
 
   meta = {
