@@ -1,117 +1,154 @@
--- Personal Win11 onboarding blueprint.
+-- onboarding: personal Win11 shell + workbench layer.
 --
--- Stacks on top of foundation + cpp-toolchain + cli-tools (declared in
--- meta.requires below). Drops in:
---   - Personal PowerShell profile additions (PSReadLine, aliases, fzf
---     helpers) — APPENDED on top of cli-tools' base profile snippet.
---   - Starship prompt theme at ~/.config/starship.toml (REPLACE mode —
---     this bp owns the file).
+-- Replaces the v1.0 split of cli-tools (4 CLIs + minimal profile) +
+-- fonts (font registration) + onboarding (personal pwsh customization).
+-- One bp now covers the whole "open a new terminal and feel at home"
+-- experience.
 --
--- Source for both content blobs: docs/ref/profile.ps1 +
--- docs/ref/starship.toml in the luban repo (canonical reference).
+-- Install footprint:
+--   pwsh                    PowerShell 7 portable (~100 MiB extracted).
+--                           Bundles PSReadLine; no separate module install.
+--   maple-mono              Maple Mono NF CN font, registered per-user
+--                           under HKCU\...\Fonts via post_install script.
+--   starship + zoxide + fd  Workbench CLIs; small portable .exe each.
+--   + ripgrep
+--
+-- Files dropped:
+--   ~/Documents/PowerShell/Microsoft.PowerShell_profile.ps1
+--                           pwsh profile — PSReadLine config, basic env,
+--                           tiny aliases, fzf helpers, init for zoxide
+--                           and starship + RIPGREP_CONFIG_PATH wiring.
+--                           mode = replace; this bp owns the file.
+--   ~/.config/starship.toml          starship prompt theme.
+--   ~/.config/ripgrep/ripgreprc      sane ripgrep defaults.
+--   ~/.config/fd/ignore              sane fd ignore patterns.
+--   <localappdata>/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/
+--     LocalState/settings.json       Windows Terminal config — sets
+--                                    Maple Mono as the default font and
+--                                    Ayu Mirage as the default theme.
+--                                    mode = merge (RFC 7396 JSON merge
+--                                    patch). NOTE: arrays REPLACE under
+--                                    7396, so any user-customized schemes
+--                                    will be clobbered. If you have
+--                                    hand-curated WT schemes, fork this
+--                                    bp before applying.
+--
+-- PSReadLine is NOT installed as a separate tool — pwsh 7 ships with
+-- it bundled at $PSHome/Modules/PSReadLine. The profile just configures
+-- it (Set-PSReadLineOption / -KeyHandler).
+
+-- Build the WT settings.json target path at parse time. WT lives in a
+-- versioned Packages\ subdir we can't predict from a static string;
+-- LOCALAPPDATA gives us the prefix.
+local localappdata = os.getenv("LOCALAPPDATA") or ""
+local wt_settings = localappdata ..
+    "\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json"
 
 return {
   schema = 1,
   name = "onboarding",
-  description = "Personal Win11 onboarding — pwsh profile additions + starship theme",
+  description = "Personal Win11 shell: pwsh + Maple Mono + starship/zoxide/fd/rg + Windows Terminal theme",
 
-  tools = {},
-
-  files = {
-    -- PowerShell profile add-ons. cli-tools.lua already appended the
-    -- zoxide / starship init + RIPGREP_CONFIG_PATH; this append stacks
-    -- personal taste on top: env vars, PSReadLine config, tiny aliases,
-    -- fzf helpers. Encoding to UTF-8 BOM-less so non-ASCII chars in
-    -- subsequent commands don't garble.
-    ["~/Documents/PowerShell/Microsoft.PowerShell_profile.ps1"] = {
-      mode = "append",
-      content = [==[
-
-# ---------- helpers ----------
-
-function Has-Cmd {
-    param([Parameter(Mandatory)][string]$Name)
-    return [bool](Get-Command $Name -ErrorAction SilentlyContinue)
-}
-
-# ---------- basic env ----------
-
-$env:EDITOR = "code"
-$env:VISUAL = "code"
-$env:STARSHIP_CONFIG = "$HOME\.config\starship.toml"
-
-try {
-    [Console]::InputEncoding  = [System.Text.UTF8Encoding]::new()
-    [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
-    $OutputEncoding = [System.Text.UTF8Encoding]::new()
-} catch {}
-
-# ---------- PSReadLine ----------
-
-try {
-    Import-Module PSReadLine -ErrorAction Stop
-
-    Set-PSReadLineOption -EditMode Windows
-    Set-PSReadLineOption -BellStyle None
-    Set-PSReadLineOption -PredictionSource History
-    Set-PSReadLineOption -PredictionViewStyle ListView
-
-    Set-PSReadLineKeyHandler -Key Tab    -Function MenuComplete
-    Set-PSReadLineKeyHandler -Key Ctrl+d -Function DeleteCharOrExit
-    Set-PSReadLineKeyHandler -Key Ctrl+r -Function ReverseSearchHistory
-    Set-PSReadLineKeyHandler -Key Ctrl+f -Function ForwardWord
-    Set-PSReadLineKeyHandler -Key Ctrl+b -Function BackwardWord
-    Set-PSReadLineKeyHandler -Key Ctrl+l -Function ClearScreen
-} catch {
-    Write-Warning "PSReadLine not available or failed to configure."
-}
-
-# ---------- tiny aliases ----------
-
-function ll { Get-ChildItem -Force @args }
-function la { Get-ChildItem -Force @args }
-function .. { Set-Location .. }
-function ... { Set-Location ..\.. }
-
-function reload {
-    . $PROFILE.CurrentUserAllHosts
-}
-
-function prof {
-    if (Has-Cmd code) {
-        code $PROFILE.CurrentUserAllHosts
-    } else {
-        notepad $PROFILE.CurrentUserAllHosts
-    }
-}
-
-# ---------- fzf: installed but mostly passive ----------
-
-if (Has-Cmd fzf) {
-    $env:FZF_DEFAULT_OPTS = "--height 40% --layout=reverse --border"
-
-    function fcd {
-        $dir = Get-ChildItem -Directory -Recurse -ErrorAction SilentlyContinue |
-            Select-Object -ExpandProperty FullName |
-            fzf
-
-        if ($dir) {
-            Set-Location $dir
-        }
-    }
-
-    function fh {
-        Get-Content (Get-PSReadLineOption).HistorySavePath |
-            fzf |
-            Set-Clipboard
-    }
-}
-]==],
+  tools = {
+    -- PowerShell 7 portable. github.com/PowerShell/PowerShell ships
+    -- PowerShell-X.Y.Z-win-x64.zip — the resolver picks the win-x64
+    -- asset by host triplet match. pwsh.exe at the archive root.
+    --
+    -- Bundles PSReadLine + PowerShellGet + Microsoft.PowerShell.Archive
+    -- in $PSHome\Modules; the profile just configures them.
+    pwsh = {
+      source = "github:PowerShell/PowerShell",
+      bin = "pwsh.exe",
     },
 
-    -- Starship prompt theme. Mode = replace — onboarding owns the file.
-    -- Edit docs/ref/starship.toml in the luban repo and re-apply if you
-    -- want to retune.
+    starship = { source = "github:starship/starship" },
+    zoxide   = { source = "github:ajeetdsouza/zoxide" },
+    fd       = { source = "github:sharkdp/fd" },
+    ripgrep  = { source = "github:BurntSushi/ripgrep" },
+
+    -- Maple Mono NF CN font. The GitHub release zip contains only
+    -- .ttf files; the registration logic (HKCU font path + AddFontResourceEx
+    -- broadcast) lives in scripts/register-fonts.ps1 next to this bp.
+    -- `bp:` prefix resolves the script path against the bp source root,
+    -- not the extracted artifact root (per DESIGN §9.9 post_install).
+    --
+    -- no_shim = true: .ttf files have no PATH binary to expose;
+    -- post_install does all the work.
+    ["maple-mono"] = {
+      source = "github:subframe7536/maple-font",
+      no_shim = true,
+      post_install = "bp:scripts/register-fonts.ps1",
+    },
+  },
+
+  files = {
+    -- ripgrep config: smart-case, hidden, follow, extra type aliases.
+    -- mode = replace because cli-tools (the v1.0 ancestor of this bp)
+    -- owned this path too; subsequent applies overwrite cleanly.
+    ["~/.config/ripgrep/ripgreprc"] = {
+      mode = "replace",
+      content = [[
+# luban onboarding default ripgreprc. Override per-invocation if you
+# need to.
+
+# Smart case: case-insensitive unless the pattern has uppercase.
+--smart-case
+
+# Search hidden files (.config, .vscode, ...) but still respect .gitignore.
+--hidden
+
+# Follow symlinks — common in monorepo node_modules / pnpm setups.
+--follow
+
+# Cap match line length so a minified single-line bundle doesn't eat
+# the terminal.
+--max-columns=200
+--max-columns-preview
+
+# A few file types upstream doesn't ship by default.
+--type-add=cmake:*.{cmake,CMakeLists.txt}
+--type-add=just:Justfile
+--type-add=docker:{Dockerfile,*.dockerfile,docker-compose*.yml}
+
+# Cosmetic — emphasize line numbers a touch.
+--colors=line:fg:yellow
+--colors=line:style:bold
+--colors=path:fg:green
+--colors=match:fg:red
+--colors=match:style:bold
+]],
+    },
+
+    -- fd auto-loads this from ~/.config/fd/ignore (no env var needed).
+    -- Pattern syntax is gitignore-compatible.
+    ["~/.config/fd/ignore"] = {
+      mode = "replace",
+      content = [[
+# luban onboarding default fd ignore — auto-loaded from
+# ~/.config/fd/ignore. Pattern syntax is gitignore-compatible.
+
+# Big build / package dirs that almost never want to be searched.
+node_modules/
+.venv/
+__pycache__/
+target/
+dist/
+build/
+out/
+
+# IDE caches.
+.idea/
+.vs/
+.vscode/
+
+# Misc large local stores.
+.cache/
+.terraform/
+.gradle/
+]],
+    },
+
+    -- Starship prompt theme. Ayu-ish color choices; minimal, fast.
     ["~/.config/starship.toml"] = {
       mode = "replace",
       content = [[
@@ -180,14 +217,173 @@ success_symbol = "[❯](bold green)"
 error_symbol = "[❯](bold red)"
 ]],
     },
+
+    -- pwsh profile. mode = replace; this bp owns the user's
+    -- Microsoft.PowerShell_profile.ps1. PSReadLine config + tiny
+    -- aliases + fzf helpers + zoxide / starship init + RIPGREP env wire.
+    ["~/Documents/PowerShell/Microsoft.PowerShell_profile.ps1"] = {
+      mode = "replace",
+      content = [==[
+# =========================================================
+# luban onboarding pwsh profile
+# Drives PSReadLine + zoxide + starship + ripgrep config wire-up.
+# =========================================================
+
+# ---------- helpers ----------
+
+function Has-Cmd {
+    param([Parameter(Mandatory)][string]$Name)
+    return [bool](Get-Command $Name -ErrorAction SilentlyContinue)
+}
+
+# ---------- basic env ----------
+
+$env:EDITOR = "code"
+$env:VISUAL = "code"
+$env:STARSHIP_CONFIG = "$HOME\.config\starship.toml"
+
+# Point ripgrep at its config (rg only reads config when
+# RIPGREP_CONFIG_PATH is set; there's no implicit lookup).
+$rgrc = Resolve-Path "~/.config/ripgrep/ripgreprc" -ErrorAction SilentlyContinue
+if ($rgrc) { $env:RIPGREP_CONFIG_PATH = $rgrc.Path }
+
+try {
+    [Console]::InputEncoding  = [System.Text.UTF8Encoding]::new()
+    [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+    $OutputEncoding = [System.Text.UTF8Encoding]::new()
+} catch {}
+
+# ---------- PSReadLine (bundled with pwsh 7) ----------
+
+try {
+    Import-Module PSReadLine -ErrorAction Stop
+
+    Set-PSReadLineOption -EditMode Windows
+    Set-PSReadLineOption -BellStyle None
+    Set-PSReadLineOption -PredictionSource History
+    Set-PSReadLineOption -PredictionViewStyle ListView
+
+    Set-PSReadLineKeyHandler -Key Tab    -Function MenuComplete
+    Set-PSReadLineKeyHandler -Key Ctrl+d -Function DeleteCharOrExit
+    Set-PSReadLineKeyHandler -Key Ctrl+r -Function ReverseSearchHistory
+    Set-PSReadLineKeyHandler -Key Ctrl+f -Function ForwardWord
+    Set-PSReadLineKeyHandler -Key Ctrl+b -Function BackwardWord
+    Set-PSReadLineKeyHandler -Key Ctrl+l -Function ClearScreen
+} catch {
+    Write-Warning "PSReadLine not available or failed to configure."
+}
+
+# ---------- tiny aliases ----------
+
+function ll { Get-ChildItem -Force @args }
+function la { Get-ChildItem -Force @args }
+function .. { Set-Location .. }
+function ... { Set-Location ..\.. }
+
+function reload {
+    . $PROFILE.CurrentUserAllHosts
+}
+
+function prof {
+    if (Has-Cmd code) {
+        code $PROFILE.CurrentUserAllHosts
+    } else {
+        notepad $PROFILE.CurrentUserAllHosts
+    }
+}
+
+# ---------- fzf: installed but mostly passive ----------
+
+if (Has-Cmd fzf) {
+    $env:FZF_DEFAULT_OPTS = "--height 40% --layout=reverse --border"
+
+    function fcd {
+        $dir = Get-ChildItem -Directory -Recurse -ErrorAction SilentlyContinue |
+            Select-Object -ExpandProperty FullName |
+            fzf
+
+        if ($dir) {
+            Set-Location $dir
+        }
+    }
+
+    function fh {
+        Get-Content (Get-PSReadLineOption).HistorySavePath |
+            fzf |
+            Set-Clipboard
+    }
+}
+
+# ---------- zoxide ----------
+
+if (Has-Cmd zoxide) {
+    Invoke-Expression (& { (zoxide init powershell | Out-String) })
+}
+
+# ---------- starship prompt ----------
+
+if (Has-Cmd starship) {
+    Invoke-Expression (&starship init powershell)
+}
+]==],
+    },
+
+    -- Windows Terminal: defaultProfile picks Maple Mono + Ayu Mirage.
+    -- mode = merge: RFC 7396 JSON merge patch deep-merges objects key-
+    -- by-key but ARRAYS REPLACE WHOLESALE. So `schemes` here will
+    -- replace any user-curated scheme list. profiles.defaults likewise
+    -- merges deeply for objects but the `font` block is fully written.
+    --
+    -- WT reads this file live; new tabs reflect the change immediately.
+    -- If WT isn't installed yet, file_deploy creates the path; WT will
+    -- pick up our settings once the user installs it.
+    [wt_settings] = {
+      mode = "merge",
+      content = [==[
+{
+  "profiles": {
+    "defaults": {
+      "colorScheme": "Ayu Mirage",
+      "font": {
+        "face": "Maple Mono NF CN",
+        "size": 11
+      },
+      "useAcrylic": false,
+      "padding": "8"
+    }
+  },
+  "schemes": [
+    {
+      "name": "Ayu Mirage",
+      "background": "#1F2430",
+      "foreground": "#CBCCC6",
+      "cursorColor": "#FFCC66",
+      "selectionBackground": "#34455A",
+      "black": "#1F2430",
+      "red": "#FF3333",
+      "green": "#BAE67E",
+      "yellow": "#FFA759",
+      "blue": "#73D0FF",
+      "purple": "#FFA759",
+      "cyan": "#95E6CB",
+      "white": "#C7C7C7",
+      "brightBlack": "#686868",
+      "brightRed": "#F27983",
+      "brightGreen": "#A6CC70",
+      "brightYellow": "#FFCC66",
+      "brightBlue": "#5CCFE6",
+      "brightPurple": "#D4BFFF",
+      "brightCyan": "#95E6CB",
+      "brightWhite": "#FFFFFF"
+    }
+  ]
+}
+]==],
+    },
   },
 
   meta = {
-    requires = {
-      "main/foundation",
-      "main/cpp-toolchain",
-      "main/cli-tools",
-    },
+    requires = { "main/bootstrap" },
     conflicts = {},
   },
 }
